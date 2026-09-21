@@ -1,33 +1,46 @@
-# attribution-facts
-Self-declared Attribution Facts panel for decks, memos, and workbooks. A nutrition label to prevent AI workslop. Free generator. Not a detector.
 # Attribution Facts
 
-Self-declared label for prepared work — decks, memos, workbooks.
-A nutrition label to prevent AI workslop. Free generator. Not a detector.
+A self-declared nutrition label for prepared work — decks, memos, workbooks, email, PDFs.
+Free generator. Not a detector.
 
 **You attest. You sign.**
 
+Use it: https://kcoppins-creator.github.io/attribution-facts/attribution-facts-builder.html
+
 ## Ratings
 
-| Code | Means | Human-authored share |
-| --- | --- | --- |
-| HG | Human Generated | 75%+ |
-| MA | Machine Assisted | 40–74% |
-| MD | Machine Drafted | 15–39% |
-| MG | Machine Generated | under 15% |
+The code keys off **human-authored %** only.
 
-The code keys off the first number only. Origin of the idea is a separate line.
+| Code | Means | Human-authored |
+| --- | --- | --- |
+| HG | Human generated | 75%+ |
+| AI-A | AI-assisted | 40–74% |
+| AI-D | AI-drafted | 15–39% |
+| AI-G | AI-generated | under 15% |
+
+If no human-review checks are marked, the line under the code says so. AI-D with nothing checked prints “No meaningful human review.”
+
+## What you fill in
+
+1. What the file is (deck, document, proposal, spreadsheet, email, PDF).
+2. The ask (optional) — what you requested before anyone wrote the file.
+3. Human / AI-generated / AI-edited so the three numbers total 100.
+4. Optional captions under each percentage.
+5. What a person checked. One extra check changes with file type.
+6. AI tools used. Your name.
+
+Nothing you enter leaves the page.
 
 ## Use it
 
-1. Open `attribution-label.html` in a browser.
-2. Fill human / AI-generated / AI-edited so they total 100.
-3. Download the badge PNG (cover) and/or the full panel PNG.
-4. Insert → Pictures on the file you are sending.
+1. Open the builder in a browser.
+2. Fill the mix and the checks.
+3. Download the panel PNG (last page) and/or the badge PNG (cover).
+4. Insert → Pictures in the file you are sending.
 
 ## License
 
 MIT. Keep the copyright line on the panel.
 Format © 2026 Kevin T. Coppins.
 
-Not a laboratory test. Not a detector. No warranty.
+Self-declared. Not a laboratory test. No warranty.
