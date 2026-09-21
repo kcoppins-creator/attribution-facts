@@ -488,7 +488,7 @@ function buildPanel() {
   y += 2; rule(10);
 
   y += 34; txt(L, y, "Human review", 24, 700);
-  txt(R, y + 2, passed() + "/" + CHECKS.length, 44, 700, "end");
+  txt(R, y + 2, passed() + "/" + checkTotal(), 44, 700, "end");
   y += 18; txt(L, y, "Done by a person, not a tool.", 12, 400, null, "#5d5f59");
   y += 8; thin();
 
