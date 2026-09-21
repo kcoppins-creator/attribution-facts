@@ -258,7 +258,17 @@ var TYPES = {
     },
     start: "Write a note to the customer about the delay"
   },
-  pdf: {
+  social: {
+    label: "Social post", unit: "lines", serving: "1 post",
+    extra: { id: "public", label: "Public-ready — no confidential or private data" },
+    hints: {
+      human: "The point and the stance",
+      gen: "First-draft lines",
+      edit: "Tighten and tone pass"
+    },
+    start: "Post about slop grenades and a nutrition label"
+  },
+    pdf: {
     label: "PDF", unit: "pages", serving: "1 PDF",
     extra: { id: "source", label: "Matches the source file" },
     hints: {
