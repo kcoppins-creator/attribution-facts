@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attribution Facts builder</title>
+<style>
+  :root{
+    --ink:#111111;
+    --paper:#ffffff;
+    --ground:#e9eae6;
+    --rule:#c9cac4;
+    --muted:#5d5f59;
+    --pass:#1d7a4c;
+    --fail:#b3261e;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--ground);
+    color:var(--ink);
+    font-family:Helvetica,Arial,sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 24px 80px}
+  header{border-bottom:3px solid var(--ink);padding-bottom:14px;margin-bottom:28px}
+  h1{font-size:30px;line-height:1.1;margin:0 0 6px;font-weight:700;letter-spacing:-0.4px}
+  header p{margin:0;color:var(--muted);font-size:14px;max-width:56ch}
+  .cols{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:40px;align-items:start}
+  @media (max-width:880px){.cols{grid-template-columns:minmax(0,1fr);gap:28px}}
+  fieldset{border:none;border-top:1px solid var(--rule);margin:0 0 22px;padding:18px 0 0}
+  fieldset:first-of-type{border-top:none;padding-top:0}
+  legend{padding:0;font-size:17px;font-weight:700}
+  .hint{color:var(--muted);font-size:13px;margin:2px 0 14px}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+  input[type=text]{
+    width:100%;padding:9px 11px;border:1px solid var(--rule);border-radius:3px;
+    background:var(--paper);font:inherit;font-size:15px;color:var(--ink);
+  }
+  input[type=text]:focus,button:focus-visible,input[type=range]:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .field{margin-bottom:14px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .chip{
+    padding:8px 14px;border:1px solid var(--rule);background:var(--paper);
+    border-radius:3px;font:inherit;font-size:14px;cursor:pointer;color:var(--ink);
+  }
+  .chip[aria-pressed=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  input[type=range]{width:100%;accent-color:var(--ink);margin:4px 0 2px}
+  .sliderhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .sliderhead b{font-size:19px}
+  .mixbar{display:flex;height:18px;margin-top:16px;border:1px solid var(--rule);border-radius:2px;overflow:hidden}
+  .mixbar i{display:block;transition:none}
+  .mixlegend{display:flex;justify-content:space-between;gap:10px;margin-top:9px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+  .mixlegend > span{display:flex;align-items:center;gap:6px}
+  .sw{width:10px;height:10px;display:inline-block;border-radius:2px;flex:0 0 auto}
+  .check{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    border-bottom:1px solid var(--rule);padding:9px 0;
+  }
+  .check span{font-size:15px}
+  .toggle{display:flex;border:1px solid var(--rule);border-radius:3px;overflow:hidden;flex:0 0 auto}
+  .toggle button{
+    border:none;background:var(--paper);padding:6px 15px;font:inherit;font-size:14px;
+    cursor:pointer;color:var(--muted);
+  }
+  .toggle button+button{border-left:1px solid var(--rule)}
+  .toggle button[aria-pressed=true]{background:var(--ink);color:var(--paper);font-weight:700}
+  aside{position:sticky;top:24px}
+  @media (max-width:880px){aside{position:static}}
+  .panelbox{background:var(--paper);padding:16px;border:1px solid var(--rule);border-radius:3px}
+  .panelbox svg{display:block;width:100%;height:auto}
+  .actions{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+  .actions button{
+    padding:12px 16px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);
+    font:inherit;font-size:15px;font-weight:700;border-radius:3px;cursor:pointer;
+  }
+  .actions button.ghost{background:var(--paper);color:var(--ink);font-weight:400}
+  .note{color:var(--muted);font-size:12px;margin-top:12px;line-height:1.5}
+  .warn{color:var(--fail);font-size:13px;min-height:19px;margin-top:6px}
+</style>
+
+<div class="wrap">
+<header>
+  <h1>Attribution Facts</h1>
+  <p>Say what you did, say what the machine did, sign it. Takes about a minute. Nothing you enter leaves this page.</p>
+</header>
+
+<div class="cols">
+<form id="form" autocomplete="off">
+
+  <fieldset>
+    <legend>What is it</legend>
+    <div class="field">
+      <label for="docname">Document name</label>
+      <input type="text" id="docname" placeholder="Q3 board deck">
+    </div>
+    <p class="hint">Type sets the units on the label.</p>
+    <div class="chips" id="types" role="group" aria-label="Document type"></div>
+    <div class="field">
+      <label for="serving">Content evaluated</label>
+      <input type="text" id="serving" value="1 deck">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="size">How big</label>
+        <input type="text" id="size" value="24">
+      </div>
+      <div class="field">
+        <label for="unit">Counted in</label>
+        <input type="text" id="unit" value="slides">
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>The ask</legend>
+    <p class="hint">Optional. What you asked for, before anyone wrote the file. Prints on the label only if you fill it.</p>
+    <div class="field">
+      <label for="originCredit">The ask</label>
+      <input type="text" id="originCredit" placeholder="Q3 board QBR from last quarter’s notes">
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>How much is yours</legend>
+    <p class="hint">Your honest estimate. The rating keys off human-authored only.</p>
+    <div class="sliderhead">
+      <label for="human" style="margin:0">Human-authored, including anything you rewrote</label>
+      <b id="humanOut">56%</b>
+    </div>
+    <input type="range" id="human" min="0" max="100" step="1" value="56">
+    <div class="sliderhead" style="margin-top:16px">
+      <label for="split" style="margin:0" id="splitLabel">Of the remaining 44%, how much the machine wrote from scratch</label>
+      <b id="splitOut">50%</b>
+    </div>
+    <input type="range" id="split" min="0" max="100" step="1" value="50">
+    <div class="mixbar">
+      <i id="barH" style="width:56%;background:#111111"></i>
+      <i id="barG" style="width:22%;background:#8a8b85"></i>
+      <i id="barE" style="width:22%;background:#cfd0ca"></i>
+    </div>
+    <div class="mixlegend">
+      <span><i class="sw" style="background:#111111"></i><span id="humanLeg">Human-authored 56%</span></span>
+      <span><i class="sw" style="background:#8a8b85"></i><span id="genOut">AI-generated 22%</span></span>
+      <span><i class="sw" style="background:#cfd0ca"></i><span id="editOut">AI-edited 22%</span></span>
+    </div>
+    <p class="hint" style="margin:12px 0 10px">Two sliders, three numbers. They always total 100.</p>
+    <p class="hint">Optional captions. They print in small type under each percentage on the label. Leave blank and nothing extra prints.</p>
+    <div class="field">
+      <label for="humanNote">Caption under Human-authored % (optional)</label>
+      <input type="text" id="humanNote" placeholder="Strategy, decisions, and sign-off">
+    </div>
+    <div class="field">
+      <label for="genNote">Caption under AI-generated % (optional)</label>
+      <input type="text" id="genNote" placeholder="First-draft slides still on the page">
+    </div>
+    <div class="field">
+      <label for="editNote">Caption under AI-edited % (optional)</label>
+      <input type="text" id="editNote" placeholder="Tone pass on the narrative">
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>What you checked</legend>
+    <p class="hint">A person, not a tool. A model checking its own output does not count.</p>
+    <div id="checks"></div>
+    <p class="hint" style="margin:18px 0 0">Handling</p>
+    <div id="handling"></div>
+    <div id="extraCheck"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Who is signing</legend>
+    <div class="field">
+      <label for="name">Name</label>
+      <input type="text" id="name" placeholder="Your name">
+    </div>
+    <div class="field">
+      <label for="tools">AI tools used</label>
+      <input type="text" id="tools" placeholder="Copilot, Claude, PowerPoint Designer">
+    </div>
+    <div class="field">
+      <label for="date">Date</label>
+      <input type="text" id="date">
+    </div>
+    <div class="field">
+      <label for="comments">Optional note from the signer</label>
+      <input type="text" id="comments" placeholder="Anything the recipient should know">
+    </div>
+  </fieldset>
+
+</form>
+
+<aside>
+  <div class="panelbox" id="preview"></div>
+  <div class="actions">
+    <button type="button" id="dlPanel">Download full panel</button>
+    <button type="button" class="ghost" id="dlBadge">Download cover badge</button>
+    <button type="button" class="ghost" id="copyBtn">Copy panel to clipboard</button>
+    <button type="button" class="ghost" id="resetBtn">Start a new label</button>
+  </div>
+  <div class="warn" id="warn"></div>
+  <p class="note">Paste into your file with Insert, Pictures. Panel on the last page, badge on the cover.<br><br>Self-declared. Not a detector, not a lab test. You attest. You sign. Attribution Facts format, Kevin T. Coppins, 2026. Free to use, keep the line on the label.</p>
+</aside>
+</div>
+</div>
+
+<script>
+var TYPES = {
+  deck: {
+    label: "Slide deck", unit: "slides", serving: "1 deck",
+    extra: { id: "charts", label: "Charts match source numbers" },
+    hints: {
+      human: "Argument, decisions, and Q&A",
+      gen: "First-draft slides still on the page",
+      edit: "Speaker notes or Designer pass"
+    },
+    start: "Q3 board QBR from last quarter’s notes"
+  },
+  doc: {
+    label: "Document", unit: "pages", serving: "1 document",
+    extra: { id: "cites", label: "Quotes and citations checked" },
+    hints: {
+      human: "Thesis and conclusions",
+      gen: "Background or lit review",
+      edit: "Tone and grammar pass"
+    },
+    start: "Memo on the new policy"
+  },
+  proposal: {
+    label: "Proposal", unit: "sections", serving: "1 proposal",
+    extra: { id: "pricing", label: "Pricing and terms are human" },
+    hints: {
+      human: "Pricing, scope, and terms",
+      gen: "Boilerplate responses",
+      edit: "Compliance formatting pass"
+    },
+    start: "RFP response for Acme"
+  },
+  excel: {
+    label: "Spreadsheet", unit: "tabs", serving: "1 workbook",
+    extra: { id: "formulas", label: "Formulas and sources checked" },
+    hints: {
+      human: "Assumptions and formulas you built",
+      gen: "Generated formulas or pulls",
+      edit: "Formatting and cleanup"
+    },
+    start: "Q3 forecast from the CRM export"
+  },
+  email: {
+    label: "Email", unit: "paragraphs", serving: "1 email",
+    extra: { id: "audience", label: "Right recipients, no extra confidential paste" },
+    hints: {
+      human: "The ask and the decision",
+      gen: "First-draft body",
+      edit: "Tone pass"
+    },
+    start: "Write a note to the customer about the delay"
+  },
+  pdf: {
+    label: "PDF", unit: "pages", serving: "1 PDF",
+    extra: { id: "source", label: "Matches the source file" },
+    hints: {
+      human: "Same as the source file",
+      gen: "Export-only or scanned dump",
+      edit: "Flattened formatting"
+    },
+    start: "Export of the signed agreement"
+  }
+};
+
+var ORIGINS = [
+  { id: "Human brief", label: "Human brief" },
+  { id: "Mixed brief", label: "Mixed brief" },
+  { id: "AI prompt", label: "AI prompt" }
+];
+
+var CHECKS = [
+  { id: "read", label: "Read end to end" },
+  { id: "facts", label: "Facts and claims verified" },
+  { id: "numbers", label: "Numbers and data checked" },
+  { id: "sources", label: "Sources verified" },
+  { id: "second", label: "Reviewed by someone else" }
+];
+
+var HANDLING = { id: "confid", label: "Confidential data to a public model" };
+
+var state = {
+  type: "deck",
+  size: "24",
+  unit: "slides",
+  serving: "1 deck",
+  docname: "",
+  origin: "Human brief",
+  originCredit: "",
+  human: 56,
+  split: 50,
+  humanNote: "",
+  genNote: "",
+  editNote: "",
+  comments: "",
+  checks: {},
+  extra: false,
+  confid: false,
+  name: "",
+  tools: "",
+  date: ""
+};
+
+CHECKS.forEach(function (c) { state.checks[c.id] = false; });
+
+function today() {
+  var d = new Date();
+  var m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return d.getDate() + " " + m[d.getMonth()] + " " + d.getFullYear();
+}
+
+function mix() {
+  var h = state.human;
+  var rest = 100 - h;
+  var g = Math.round(rest * state.split / 100);
+  var e = rest - g;
+  return { human: h, gen: g, edit: e };
+}
+
+function rating(h) {
+  var p = passed();
+  var none = p === 0;
+  if (h >= 75) return {
+    code: "HG",
+    name: "Human generated",
+    blurb: none ? "No human review recorded." : "Written by the author."
+  };
+  if (h >= 40) return {
+    code: "AI-A",
+    name: "AI-assisted",
+    blurb: none ? "No human review recorded." : "Human-authored with AI assistance."
+  };
+  if (h >= 15) return {
+    code: "AI-D",
+    name: "AI-drafted",
+    blurb: none ? "No meaningful human review." : "Mostly AI-written, human-directed."
+  };
+  return {
+    code: "AI-G",
+    name: "AI-generated",
+    blurb: none ? "No human review recorded." : "Prompted output. Verify anything that matters."
+  };
+}
+
+function allChecks() {
+  return CHECKS.concat([TYPES[state.type].extra]);
+}
+
+function passed() {
+  var n = 0;
+  CHECKS.forEach(function (c) { if (state.checks[c.id]) n++; });
+  if (state.extra) n++;
+  return n;
+}
+
+function checkTotal() {
+  return CHECKS.length + 1;
+}
+
+function getting() {
+  var r = rating(state.human);
+  var p = passed();
+  var t = checkTotal();
+  var signed = !!(state.name && state.name.trim());
+  var a = r.code === "HG" ? "Human-authored" :
+          r.code === "AI-A" ? "Human-authored with AI assistance" :
+          r.code === "AI-D" ? "Mostly AI-written" :
+          "Almost entirely AI-written";
+  var b = p === t ? "Fully human-reviewed" : p === 0 ? "Not human-reviewed" : (p + " of " + t + " checks done");
+  var c = signed ? "Signed" : "Unsigned";
+  return a + ". " + b + ". " + c + ".";
+}
+
+function wrapLines(s, max) {
+  var words = String(s || "").split(/\s+/), lines = [], line = "";
+  words.forEach(function (w) {
+    var next = line ? line + " " + w : w;
+    if (next.length > max && line) { lines.push(line); line = w; }
+    else line = next;
+  });
+  if (line) lines.push(line);
+  return lines;
+}
+
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+var W = 380, PAD = 16, L = PAD, R = W - PAD, IW = W - PAD * 2;
+
+function buildPanel() {
+  var m = mix(), r = rating(state.human);
+  var o = [], y = 0;
+
+  function txt(x, yy, s, size, weight, anchor, fill) {
+    o.push('<text x="' + x + '" y="' + yy + '" font-family="Helvetica,Arial,sans-serif" font-size="' +
+      size + '" font-weight="' + (weight || 400) + '"' +
+      (anchor ? ' text-anchor="' + anchor + '"' : '') +
+      ' fill="' + (fill || "#111111") + '">' + esc(s) + '</text>');
+  }
+  function rule(h, color) {
+    o.push('<rect x="' + L + '" y="' + y + '" width="' + IW + '" height="' + h + '" fill="' + (color || "#111111") + '"/>');
+    y += h;
+  }
+  function thin() {
+    o.push('<rect x="' + L + '" y="' + y + '" width="' + IW + '" height="1" fill="#c9cac4"/>');
+    y += 1;
+  }
+  function pair(labelText, value, size, weight, fill) {
+    y += size + 5;
+    txt(L, y, labelText, size, weight);
+    txt(R, y, value, size, weight, "end", fill);
+    y += 6;
+  }
+  function note(s) {
+    if (!s) return;
+    y += 14;
+    txt(L, y, s, 12, 400, null, "#5d5f59");
+    y += 4;
+  }
+
+  y = 44;
+  txt(L, y, "Attribution Facts", 34, 700);
+  y += 8; thin();
+  if (state.docname) {
+    y += 22; txt(L, y, state.docname, 15, 700);
+    y += 17; txt(L, y, "Content evaluated  " + state.serving + ", " + state.size + " " + state.unit, 12, 400, null, "#5d5f59");
+    y += 8; rule(10);
+  } else {
+    y += 20; txt(L, y, "Content evaluated", 12, 400, null, "#5d5f59");
+    y += 18; txt(L, y, state.serving + ", " + state.size + " " + state.unit, 15, 700);
+    y += 8; rule(10);
+  }
+
+  if (state.originCredit) {
+    y += 20; txt(L, y, "The ask", 12, 400, null, "#5d5f59");
+    wrapLines(state.originCredit, 42).forEach(function (line) {
+      y += 16; txt(L, y, line, 15, 700);
+    });
+    y += 8; rule(5);
+  }
+
+  y += 20; txt(L, y, "How this file was produced", 12, 400, null, "#5d5f59");
+  y += 34; txt(L, y, "Rating", 24, 700); txt(R, y + 2, r.code, 44, 700, "end");
+  y += 20; txt(L, y, r.name + ". " + r.blurb, 12, 400, null, "#5d5f59");
+  y += 18; txt(L, y, "What you are getting", 12, 400, null, "#5d5f59");
+  y += 16;
+  wrapLines(getting(), 42).forEach(function (line) {
+    txt(L, y, line, 13, 700);
+    y += 16;
+  });
+  y += 2; rule(5);
+
+  y += 18; txt(R, y, "% of this file", 12, 400, "end", "#5d5f59");
+  y += 8; thin();
+
+  pair("Human-authored", m.human + "%", 15, 700);
+  note(state.humanNote);
+  y += 2;
+  txt(L, y + 12, "Rating keys off this number", 11, 400, null, "#5d5f59");
+  y += 16;
+  thin();
+  pair("AI-generated", m.gen + "%", 15, 700);
+  note(state.genNote);
+  thin();
+  pair("AI-edited", m.edit + "%", 15, 700);
+  note(state.editNote);
+
+  y += 2; rule(10);
+
+  y += 34; txt(L, y, "Human review", 24, 700);
+  txt(R, y + 2, passed() + "/" + CHECKS.length, 44, 700, "end");
+  y += 18; txt(L, y, "Done by a person, not a tool.", 12, 400, null, "#5d5f59");
+  y += 8; thin();
+
+  allChecks().forEach(function (c) {
+    var ok = c.id === TYPES[state.type].extra.id ? state.extra : state.checks[c.id];
+    pair(c.label, ok ? "Yes" : "No", 14, 400, ok ? "#1d7a4c" : "#b3261e");
+    thin();
+  });
+
+  y += 2; rule(5);
+  y += 18; txt(L, y, "Handling", 12, 400, null, "#5d5f59");
+  y += 8; thin();
+  pair(HANDLING.label, state.confid ? "Yes" : "No", 14, 700, state.confid ? "#b3261e" : "#1d7a4c");
+
+  y += 3; rule(10);
+
+  if (state.comments) {
+    y += 20; txt(L, y, "Signer notes", 12, 400, null, "#5d5f59");
+    wrapLines(state.comments, 48).forEach(function (line) {
+      y += 16; txt(L, y, line, 12, 400);
+    });
+    y += 8; rule(5);
+  }
+
+  y += 20; txt(L, y, "Signed by", 12, 400, null, "#5d5f59");
+  y += 26; txt(L, y, state.name || "Unsigned", 24, 700);
+  y += 10; thin();
+  y += 16; txt(L, y, "Made with " + (state.tools || "no AI tools") + ", " + (state.date || today()), 11, 400, null, "#5d5f59");
+  y += 15; txt(L, y, "Self-declared. Not a detector. The signer attests this is accurate.", 11, 400, null, "#5d5f59");
+  y += 15; txt(L, y, "Attribution Facts format \u00a9 2026 Kevin T. Coppins. Free to use.", 11, 400, null, "#5d5f59");
+  y += 14;
+
+  var H = y;
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H +
+    '" viewBox="0 0 ' + W + ' ' + H + '">' +
+    '<rect width="' + W + '" height="' + H + '" fill="#ffffff"/>' +
+    '<rect x="1" y="1" width="' + (W - 2) + '" height="' + (H - 2) +
+    '" fill="none" stroke="#111111" stroke-width="2"/>' + o.join("") + '</svg>';
+}
+
+function buildBadge() {
+  var r = rating(state.human), off = state.docname ? 18 : 0, H = 168 + off, o = [];
+  function txt(x, yy, s, size, weight, anchor, fill) {
+    o.push('<text x="' + x + '" y="' + yy + '" font-family="Helvetica,Arial,sans-serif" font-size="' +
+      size + '" font-weight="' + (weight || 400) + '"' +
+      (anchor ? ' text-anchor="' + anchor + '"' : '') +
+      ' fill="' + (fill || "#111111") + '">' + esc(s) + '</text>');
+  }
+  txt(L, 30, "Attribution Facts", 16, 700);
+  if (state.docname) txt(L, 48, state.docname, 13, 700);
+  o.push('<rect x="' + L + '" y="' + (38 + off) + '" width="' + IW + '" height="6" fill="#111111"/>');
+  txt(L, 90 + off, r.code, 40, 700);
+  txt(L + 66, 70 + off, r.name, 13, 400, null, "#5d5f59");
+  txt(L + 66, 90 + off, passed() + " of " + checkTotal() + " human review checks", 13, 700);
+  o.push('<rect x="' + L + '" y="' + (104 + off) + '" width="' + IW + '" height="1" fill="#c9cac4"/>');
+  if (state.originCredit) txt(L, 122 + off, state.originCredit, 11, 400, null, "#5d5f59");
+  txt(L, 138 + off, "Signed by " + (state.name || "Unsigned") + ", " + (state.date || today()), 11, 400, null, "#5d5f59");
+  txt(L, 154 + off, "Attribution Facts format \u00a9 2026 Kevin T. Coppins. Free to use.", 11, 400, null, "#5d5f59");
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H +
+    '" viewBox="0 0 ' + W + ' ' + H + '">' +
+    '<rect width="' + W + '" height="' + H + '" fill="#ffffff"/>' +
+    '<rect x="1" y="1" width="' + (W - 2) + '" height="' + (H - 2) +
+    '" fill="none" stroke="#111111" stroke-width="2"/>' + o.join("") + '</svg>';
+}
+
+function toCanvas(svg, cb) {
+  var img = new Image();
+  var scale = 3;
+  img.onload = function () {
+    var c = document.createElement("canvas");
+    c.width = img.width * scale;
+    c.height = img.height * scale;
+    var ctx = c.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    cb(c);
+  };
+  img.onerror = function () { cb(null); };
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
+function download(svg, filename) {
+  document.getElementById("warn").textContent = "";
+  toCanvas(svg, function (c) {
+    if (!c) { document.getElementById("warn").textContent = "Could not build the image. Try another browser."; return; }
+    c.toBlob(function (blob) {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    }, "image/png");
+  });
+}
+
+function render() {
+  document.getElementById("preview").innerHTML = buildPanel();
+  var m = mix();
+  document.getElementById("humanOut").textContent = m.human + "%";
+  document.getElementById("splitOut").textContent = state.split + "%";
+  document.getElementById("genOut").textContent = "AI-generated " + m.gen + "%";
+  document.getElementById("editOut").textContent = "AI-edited " + m.edit + "%";
+  document.getElementById("humanLeg").textContent = "Human-authored " + m.human + "%";
+  document.getElementById("splitLabel").textContent =
+    "Of the remaining " + (100 - m.human) + "%, how much the machine wrote from scratch";
+  document.getElementById("barH").style.width = m.human + "%";
+  document.getElementById("barG").style.width = m.gen + "%";
+  document.getElementById("barE").style.width = m.edit + "%";
+}
+
+function buildTypes() {
+  var box = document.getElementById("types");
+  box.innerHTML = "";
+  Object.keys(TYPES).forEach(function (k) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.textContent = TYPES[k].label;
+    b.setAttribute("aria-pressed", k === state.type ? "true" : "false");
+    b.onclick = function () {
+      state.type = k;
+      state.unit = TYPES[k].unit;
+      state.serving = TYPES[k].serving;
+      state.extra = false;
+      document.getElementById("unit").value = state.unit;
+      document.getElementById("serving").value = state.serving;
+      applyHints();
+      buildTypes();
+      buildExtra();
+      render();
+    };
+    box.appendChild(b);
+  });
+}
+
+function buildOrigins() {
+  var box = document.getElementById("origins");
+  box.innerHTML = "";
+  ORIGINS.forEach(function (item) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.textContent = item.label;
+    b.setAttribute("aria-pressed", item.id === state.origin ? "true" : "false");
+    b.onclick = function () { state.origin = item.id; buildOrigins(); render(); };
+    box.appendChild(b);
+  });
+}
+
+function applyHints() {
+  var h = TYPES[state.type].hints;
+  document.getElementById("humanNote").placeholder = h.human;
+  document.getElementById("genNote").placeholder = h.gen;
+  document.getElementById("editNote").placeholder = h.edit;
+  document.getElementById("originCredit").placeholder = TYPES[state.type].start;
+}
+
+function buildExtra() {
+  var box = document.getElementById("extraCheck");
+  box.innerHTML = "";
+  var extra = TYPES[state.type].extra;
+  var row = document.createElement("div");
+  row.className = "check";
+  var s = document.createElement("span");
+  s.textContent = extra.label;
+  s.style.fontWeight = "700";
+  var tog = document.createElement("div");
+  tog.className = "toggle";
+  ["Yes", "No"].forEach(function (word) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = word;
+    var isYes = word === "Yes";
+    b.setAttribute("aria-pressed", state.extra === isYes ? "true" : "false");
+    b.onclick = function () { state.extra = isYes; buildExtra(); render(); };
+    tog.appendChild(b);
+  });
+  row.appendChild(s);
+  row.appendChild(tog);
+  box.appendChild(row);
+}
+
+function buildHandling() {
+  var box = document.getElementById("handling");
+  box.innerHTML = "";
+  var row = document.createElement("div");
+  row.className = "check";
+  var s2 = document.createElement("span");
+  s2.textContent = HANDLING.label;
+  s2.style.fontWeight = "700";
+  var tog = document.createElement("div");
+  tog.className = "toggle";
+  ["No", "Yes"].forEach(function (word) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = word;
+    var isYes = word === "Yes";
+    b.setAttribute("aria-pressed", state.confid === isYes ? "true" : "false");
+    b.onclick = function () { state.confid = isYes; buildHandling(); render(); };
+    tog.appendChild(b);
+  });
+  row.appendChild(s2);
+  row.appendChild(tog);
+  box.appendChild(row);
+}
+
+function buildChecks() {
+  var box = document.getElementById("checks");
+  box.innerHTML = "";
+  CHECKS.forEach(function (c) {
+    var row = document.createElement("div");
+    row.className = "check";
+    var s = document.createElement("span");
+    s.textContent = c.label;
+    var tog = document.createElement("div");
+    tog.className = "toggle";
+    ["Yes", "No"].forEach(function (word) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = word;
+      var isYes = word === "Yes";
+      b.setAttribute("aria-pressed", state.checks[c.id] === isYes ? "true" : "false");
+      b.onclick = function () { state.checks[c.id] = isYes; buildChecks(); render(); };
+      tog.appendChild(b);
+    });
+    row.appendChild(s);
+    row.appendChild(tog);
+    box.appendChild(row);
+  });
+}
+
+document.getElementById("date").value = today();
+state.date = today();
+
+document.getElementById("human").oninput = function () { state.human = +this.value; render(); };
+document.getElementById("split").oninput = function () { state.split = +this.value; render(); };
+document.getElementById("size").oninput = function () { state.size = this.value; render(); };
+document.getElementById("unit").oninput = function () { state.unit = this.value; render(); };
+document.getElementById("serving").oninput = function () { state.serving = this.value; render(); };
+document.getElementById("docname").oninput = function () { state.docname = this.value; render(); };
+document.getElementById("originCredit").oninput = function () { state.originCredit = this.value; render(); };
+document.getElementById("humanNote").oninput = function () { state.humanNote = this.value; render(); };
+document.getElementById("genNote").oninput = function () { state.genNote = this.value; render(); };
+document.getElementById("editNote").oninput = function () { state.editNote = this.value; render(); };
+document.getElementById("name").oninput = function () { state.name = this.value; render(); };
+document.getElementById("tools").oninput = function () { state.tools = this.value; render(); };
+document.getElementById("date").oninput = function () { state.date = this.value; render(); };
+document.getElementById("comments").oninput = function () { state.comments = this.value; render(); };
+
+document.getElementById("dlPanel").onclick = function () {
+  download(buildPanel(), "attribution-facts-panel.png");
+};
+document.getElementById("dlBadge").onclick = function () {
+  download(buildBadge(), "attribution-facts-badge.png");
+};
+document.getElementById("copyBtn").onclick = function () {
+  var warn = document.getElementById("warn");
+  warn.textContent = "";
+  toCanvas(buildPanel(), function (c) {
+    if (!c || !navigator.clipboard || !window.ClipboardItem) {
+      warn.textContent = "Clipboard not available here. Use the download button.";
+      return;
+    }
+    c.toBlob(function (blob) {
+      navigator.clipboard.write([new window.ClipboardItem({ "image/png": blob })])
+        .then(function () { warn.style.color = "#1d7a4c"; warn.textContent = "Copied. Paste into your file."; })
+        .catch(function () { warn.style.color = "#b3261e"; warn.textContent = "Clipboard blocked. Use the download button."; });
+    }, "image/png");
+  });
+};
+
+document.getElementById("resetBtn").onclick = function () {
+  CHECKS.forEach(function (c) { state.checks[c.id] = false; });
+  state.human = 56; state.split = 50; state.size = "24";
+  state.type = "deck"; state.unit = TYPES.deck.unit; state.serving = TYPES.deck.serving;
+  state.origin = "Human brief"; state.originCredit = "";
+  state.humanNote = ""; state.genNote = ""; state.editNote = "";
+  state.comments = ""; state.extra = false;
+  state.confid = false; state.docname = "";
+  document.getElementById("human").value = 56;
+  document.getElementById("split").value = 50;
+  document.getElementById("size").value = "24";
+  document.getElementById("unit").value = state.unit;
+  document.getElementById("serving").value = state.serving;
+  document.getElementById("docname").value = "";
+  document.getElementById("originCredit").value = "";
+  document.getElementById("humanNote").value = "";
+  document.getElementById("genNote").value = "";
+  document.getElementById("editNote").value = "";
+  document.getElementById("comments").value = "";
+  document.getElementById("warn").textContent = "";
+  applyHints();
+  buildTypes(); buildChecks(); buildHandling(); buildExtra(); render();
+};
+
+try {
+  applyHints();
+  buildTypes();
+  buildChecks();
+  buildHandling();
+  buildExtra();
+  render();
+} catch (err) {
+  var box = document.getElementById("preview");
+  if (box) box.innerHTML = "<p style='color:#b3261e;font-size:14px;margin:0'>Preview failed. Open this file in Safari, not Files. " + String(err) + "</p>";
+}
+</script>
