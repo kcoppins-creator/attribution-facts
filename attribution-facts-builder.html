@@ -431,10 +431,12 @@ function buildPanel() {
     txt(R, y, value, size, weight, "end", fill);
     y += 6;
   }
-  function note(s) {
+ function note(s) {
     if (!s) return;
-    y += 14;
-    txt(L, y, s, 12, 400, null, "#5d5f59");
+    wrapLines(s, 48).forEach(function (line) {
+      y += 14;
+      txt(L, y, line, 12, 400, null, "#5d5f59");
+    });
     y += 4;
   }
 
